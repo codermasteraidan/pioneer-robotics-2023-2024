@@ -1,13 +1,7 @@
 #include "main.h"
-//test
-/**
- * A callback function for LLEMU's center button.
- *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
- */
 
-//motor port variables
+//motor port variables. Number corresponding to what number port on the brain the motor is plugged into
+//these variables are given values in initialize()
 int portL1;
 int portL2;
 int portL3;
@@ -17,6 +11,24 @@ int portR2;
 int portR3;
 int portR4;
 
+//determines kind of control arcade or tank. Variable explained further where it's declared
+//this variable is given a value in initialize()
+bool arcadeOrTank;
+
+//variables to determine voltage of right and left motors. The v stands for voltage
+//these variables are given values in opcontrol(), in the while loop inside the if(arcadeOrTank == ?) statements
+//voltage can vary from -127 to 127. The further from 0 the faster the motor turns.
+int vL;
+int vR;
+
+
+
+/**
+ * A callback function for LLEMU's center button.
+ *
+ * When this callback is fired, it will toggle line 2 of the LCD text between
+ * "I was pressed!" and nothing.
+ */
 void on_center_button() {
 	static bool pressed = false;
 	pressed = !pressed;
@@ -39,6 +51,9 @@ void initialize() {
 
 	pros::lcd::register_btn1_cb(on_center_button);
 
+	/*
+	Gives every single variable a value
+	*/
 	//initializing all the drive motor ports
 	portL1 = 14;
 	portL2 = 13;
@@ -49,7 +64,9 @@ void initialize() {
 	portR3 = 19;
 	portR4 = 20;
 
-	
+	//When arcadeOrTank = true, the left joystick moves robot forward backward and right joystick turns robot
+	//when arcadeOrTank = false, the left joystick controls the left 4 motors and the right joystick controls the right 4 motors
+	arcadeOrTank = true;
 }
 
 /**
@@ -117,28 +134,42 @@ void opcontrol() {
 	
 
 	while (true) {
+		//not entirely sure what this does but make sure you keep it! It was in the default pros setup.
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-		//detects how much you moved the left joystick up/down
-		int power = master.get_analog(ANALOG_LEFT_Y);
-		//detects how much you moved the right joystick left/right
-    	int turn = master.get_analog(ANALOG_RIGHT_X);
-		//determines how the motors will move
-    	int left = power + turn;
-    	int right = power - turn;
+
+
+		//arcade mode. Turn by moving right joystick left or right
+		if (arcadeOrTank == true)
+		{
+			//detects how much you moved the left joystick up/down
+			int power = master.get_analog(ANALOG_LEFT_Y);
+			//detects how much you moved the right joystick left/right
+			int turn = master.get_analog(ANALOG_RIGHT_X);
+			//determines how the motors will move
+			int vL = power + turn;
+			int vR = power - turn;
+		}
+		//tank mode. Turn by moving one joystick up and down less than the other
+		else if (arcadeOrTank == false)
+		{
+			//detects how much you moved the left and right joysticks up and down. 
+			int vL = master.get_analog(ANALOG_LEFT_Y);
+			int vR = master.get_analog(ANALOG_RIGHT_Y);
+		}
 
 		//moves left motors
-		L1.move(left);
-		L2.move(left);
-		L3.move(left);
-		L4.move(left);
+		L1.move(vL);
+		L2.move(vL);
+		L3.move(vL);
+		L4.move(vL);
 
 		//moves right motors
-		R1.move(right);
-		R2.move(right);
-		R3.move(right);
-		R4.move(right);
+		R1.move(vR);
+		R2.move(vR);
+		R3.move(vR);
+		R4.move(vR);
 
 		//slows down the code so the brain isn't overwhelmed
 		pros::delay(20);
