@@ -6,6 +6,17 @@
  * When this callback is fired, it will toggle line 2 of the LCD text between
  * "I was pressed!" and nothing.
  */
+
+//motor port variables
+int portL1;
+int portL2;
+int portL3;
+int portL4;
+int portR1;
+int portR2;
+int portR3;
+int portR4;
+
 void on_center_button() {
 	static bool pressed = false;
 	pressed = !pressed;
@@ -27,6 +38,18 @@ void initialize() {
 	pros::lcd::set_text(1, "Hello PROS User!");
 
 	pros::lcd::register_btn1_cb(on_center_button);
+
+	//initializing all the drive motor ports
+	portL1 = 14;
+	portL2 = 13;
+	portL3 = 12;
+	portL4 = 11;
+	portR1 = 17;
+	portR2 = 18;
+	portR3 = 19;
+	portR4 = 20;
+
+	
 }
 
 /**
@@ -74,20 +97,50 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
+	/*
+	the parameters are as follows: (port number, gearset, direction)
+	you can change direction by changing the bool true or false
+	we want motors to alternate directions so gears work!
+	L1 should be opposite direction of L2
+	*/
+	pros::Motor L1(portL1, MOTOR_GEAR_BLUE, false);
+	pros::Motor L2(portL2, MOTOR_GEAR_BLUE, true);
+	pros::Motor L3(portL3, MOTOR_GEAR_BLUE, false);
+	pros::Motor L4(portL4, MOTOR_GEAR_BLUE, true);
+
+	pros::Motor R1(portR1, MOTOR_GEAR_BLUE, false);
+	pros::Motor R2(portR2, MOTOR_GEAR_BLUE, true);
+	pros::Motor R3(portR3, MOTOR_GEAR_BLUE, false);
+	pros::Motor R4(portR4, MOTOR_GEAR_BLUE, true);
+
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::Motor left_mtr(1);
-	pros::Motor right_mtr(2);
+	
 
 	while (true) {
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-		int left = master.get_analog(ANALOG_LEFT_Y);
-		int right = master.get_analog(ANALOG_RIGHT_Y);
+		//detects how much you moved the left joystick up/down
+		int power = master.get_analog(ANALOG_LEFT_Y);
+		//detects how much you moved the right joystick left/right
+    	int turn = master.get_analog(ANALOG_RIGHT_X);
+		//determines how the motors will move
+    	int left = power + turn;
+    	int right = power - turn;
 
-		left_mtr = left;
-		right_mtr = right;
+		//moves left motors
+		L1.move(left);
+		L2.move(left);
+		L3.move(left);
+		L4.move(left);
 
+		//moves right motors
+		R1.move(right);
+		R2.move(right);
+		R3.move(right);
+		R4.move(right);
+
+		//slows down the code so the brain isn't overwhelmed
 		pros::delay(20);
 	}
 }
