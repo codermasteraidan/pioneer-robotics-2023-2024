@@ -1,5 +1,6 @@
 #include "main.h"
-
+#include <iostream>
+using namespace std;
 //motor port variables. Number corresponding to what number port on the brain the motor is plugged into
 //these variables are given values in initialize()
 int portL1;
@@ -10,10 +11,6 @@ int portR1;
 int portR2;
 int portR3;
 int portR4;
-
-//determines kind of control arcade or tank. Variable explained further where it's declared
-//this variable is given a value in initialize()
-bool arcadeOrTank;
 
 //variables to determine voltage of right and left motors. The v stands for voltage
 //these variables are given values in opcontrol(), in the while loop inside the if(arcadeOrTank == ?) statements
@@ -64,9 +61,6 @@ void initialize() {
 	portR3 = 19;
 	portR4 = 20;
 
-	//When arcadeOrTank = true, the left joystick moves robot forward backward and right joystick turns robot
-	//when arcadeOrTank = false, the left joystick controls the left 4 motors and the right joystick controls the right 4 motors
-	arcadeOrTank = true;
 }
 
 /**
@@ -125,10 +119,12 @@ void opcontrol() {
 	pros::Motor L3(portL3, MOTOR_GEAR_BLUE, false);
 	pros::Motor L4(portL4, MOTOR_GEAR_BLUE, true);
 
-	pros::Motor R1(portR1, MOTOR_GEAR_BLUE, false);
-	pros::Motor R2(portR2, MOTOR_GEAR_BLUE, true);
-	pros::Motor R3(portR3, MOTOR_GEAR_BLUE, false);
-	pros::Motor R4(portR4, MOTOR_GEAR_BLUE, true);
+	pros::Motor R1(portR1, MOTOR_GEAR_BLUE, true);
+	pros::Motor R2(portR2, MOTOR_GEAR_BLUE, false);
+	pros::Motor R3(portR3, MOTOR_GEAR_BLUE, true);
+	pros::Motor R4(portR4, MOTOR_GEAR_BLUE, false);
+	
+
 
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	
@@ -139,26 +135,19 @@ void opcontrol() {
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 
+		//Turn by moving one joystick up and down less than the other
+		//detects how much you moved the left and right joysticks up and down. 
+		vL = master.get_analog(ANALOG_LEFT_Y);
+		vR = master.get_analog(ANALOG_RIGHT_Y);
 
-		//arcade mode. Turn by moving right joystick left or right
-		if (arcadeOrTank == true)
-		{
-			//detects how much you moved the left joystick up/down
-			int power = master.get_analog(ANALOG_LEFT_Y);
-			//detects how much you moved the right joystick left/right
-			int turn = master.get_analog(ANALOG_RIGHT_X);
-			//determines how the motors will move
-			int vL = power + turn;
-			int vR = power - turn;
-		}
-		//tank mode. Turn by moving one joystick up and down less than the other
-		else if (arcadeOrTank == false)
-		{
-			//detects how much you moved the left and right joysticks up and down. 
-			int vL = master.get_analog(ANALOG_LEFT_Y);
-			int vR = master.get_analog(ANALOG_RIGHT_Y);
-		}
-
+		//speed is way too fast so now it will be slowing down
+		//the limiter is a percentage. right now it's set to 50% power
+		
+		vL = int(vL/2);
+		vR = int(vR/2);
+		
+		pros::lcd::set_text(1,"Left speed: " + to_string(vL));
+		pros::lcd::set_text(2,"Right Speed: " + to_string(vR));
 		//moves left motors
 		L1.move(vL);
 		L2.move(vL);
@@ -171,7 +160,10 @@ void opcontrol() {
 		R3.move(vR);
 		R4.move(vR);
 
-		//slows down the code so the brain isn't overwhelmed
+		//slows down the code so the brain isn't overwhelmed 
+		//units = ms
 		pros::delay(20);
 	}
 }
+
+
