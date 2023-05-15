@@ -1,168 +1,81 @@
 #include "main.h"
 #include <iostream>
-using namespace std;
-//motor port variables. Number corresponding to what number port on the brain the motor is plugged into
-//these variables are given values in initialize()
-int portL1;
-int portL2;
-int portL3;
-int portL4;
-int portR1;
-int portR2;
-int portR3;
-int portR4;
+using namespace std; //so I can use strings cuz they're nice for debugging
+/*
+Drive System Stuff
+*/
+static int portL1 = 14; //all 8 motor port variables
+static int portL2 = 13; //port variables are unnecessary but make it easier to see what each port is.  
+static int portL3 = 12;
+static int portL4 = 11;
+static int portR1 = 17;
+static int portR2 = 18;
+static int portR3 = 19;
+static int portR4 = 20;
+pros::Motor L1(portL1, MOTOR_GEAR_BLUE, false); //all 8 drive motors
+pros::Motor L2(portL2, MOTOR_GEAR_BLUE, true);
+pros::Motor L3(portL3, MOTOR_GEAR_BLUE, false);
+pros::Motor L4(portL4, MOTOR_GEAR_BLUE, true);
+pros::Motor R1(portR1, MOTOR_GEAR_BLUE, true);
+pros::Motor R2(portR2, MOTOR_GEAR_BLUE, false);
+pros::Motor R3(portR3, MOTOR_GEAR_BLUE, true);
+pros::Motor R4(portR4, MOTOR_GEAR_BLUE, false);
 
-//variables to determine voltage of right and left motors. The v stands for voltage
-//these variables are given values in opcontrol(), in the while loop inside the if(arcadeOrTank == ?) statements
-//voltage can vary from -127 to 127. The further from 0 the faster the motor turns.
-int vL;
-int vR;
-
-
-
-/**
- * A callback function for LLEMU's center button.
- *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
- */
-void on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
+//shortens the code later down, potentially can be used for autonomous code later?
+void moveLeftMotors (int voltage)
+{
+	L1.move(voltage);
+	L2.move(voltage);
+	L3.move(voltage);
+	L4.move(voltage);
 }
+void moveRightMotors (int voltage)
+{
+	R1.move(voltage);
+	R2.move(voltage);
+	R3.move(voltage);
+	R4.move(voltage);
+}
+/*
+End of Drive System Stuff 
+*/
 
-/**
- * Runs initialization code. This occurs as soon as the program is started.
- *
- * All other competition modes are blocked by initialize; it is recommended
- * to keep execution time for this mode under a few seconds.
- */
+
+//only is so you can display numbers on brain screen for debugging purposes
 void initialize() {
-	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
-
-	pros::lcd::register_btn1_cb(on_center_button);
-
-	/*
-	Gives every single variable a value
-	*/
-	//initializing all the drive motor ports
-	portL1 = 14;
-	portL2 = 13;
-	portL3 = 12;
-	portL4 = 11;
-	portR1 = 17;
-	portR2 = 18;
-	portR3 = 19;
-	portR4 = 20;
-
+	pros::lcd::initialize();	
 }
 
-/**
- * Runs while the robot is in the disabled state of Field Management System or
- * the VEX Competition Switch, following either autonomous or opcontrol. When
- * the robot is enabled, this task will exit.
- */
+//probably won't use this, but don't delete it or pros might get angry.
 void disabled() {}
-
-/**
- * Runs after initialize(), and before autonomous when connected to the Field
- * Management System or the VEX Competition Switch. This is intended for
- * competition-specific initialization routines, such as an autonomous selector
- * on the LCD.
- *
- * This task will exit when the robot is enabled and autonomous or opcontrol
- * starts.
- */
 void competition_initialize() {}
 
-/**
- * Runs the user autonomous code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the autonomous
- * mode. Alternatively, this function may be called in initialize or opcontrol
- * for non-competition testing purposes.
- *
- * If the robot is disabled or communications is lost, the autonomous task
- * will be stopped. Re-enabling the robot will restart the task, not re-start it
- * from where it left off.
- */
-void autonomous() {}
+//runs auton code. If you want to test without the competition switch active you can do autonomous() inside opcontrol or initialize
+void autonomous() 
+{
 
-/**
- * Runs the operator control code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the operator
- * control mode.
- *
- * If no competition control is connected, this function will run immediately
- * following initialize().
- *
- * If the robot is disabled or communications is lost, the
- * operator control task will be stopped. Re-enabling the robot will restart the
- * task, not resume it from where it left off.
- */
+}
+
+//this function runs during driver control period. 
 void opcontrol() {
-	/*
-	the parameters are as follows: (port number, gearset, direction)
-	you can change direction by changing the bool true or false
-	we want motors to alternate directions so gears work!
-	L1 should be opposite direction of L2
-	*/
-	pros::Motor L1(portL1, MOTOR_GEAR_BLUE, false);
-	pros::Motor L2(portL2, MOTOR_GEAR_BLUE, true);
-	pros::Motor L3(portL3, MOTOR_GEAR_BLUE, false);
-	pros::Motor L4(portL4, MOTOR_GEAR_BLUE, true);
-
-	pros::Motor R1(portR1, MOTOR_GEAR_BLUE, true);
-	pros::Motor R2(portR2, MOTOR_GEAR_BLUE, false);
-	pros::Motor R3(portR3, MOTOR_GEAR_BLUE, true);
-	pros::Motor R4(portR4, MOTOR_GEAR_BLUE, false);
-	
-
-
+	//makes sure you get controller inputs
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	
-
-	while (true) {
-		//not entirely sure what this does but make sure you keep it! It was in the default pros setup.
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-
-		//Turn by moving one joystick up and down less than the other
-		//detects how much you moved the left and right joysticks up and down. 
+	int vL;
+	int vR; //The v stands for voltage, can vary from -127 to 127. The further from 0 the faster the motor turns.
+	while (true) {		
+		//gets input from controller, cuts the value in half and makes the motors move at that speed.  
 		vL = master.get_analog(ANALOG_LEFT_Y);
 		vR = master.get_analog(ANALOG_RIGHT_Y);
-
-		//speed is way too fast so now it will be slowing down
-		//the limiter is a percentage. right now it's set to 50% power
-		
 		vL = int(vL/2);
-		vR = int(vR/2);
-		
+		vR = int(vR/2);		
+		moveLeftMotors(vL);
+		moveRightMotors(vR); //moves the drive system motors :)
+
+		pros::delay(20); //slows down code so brain doesn't kill itself :)
+
+		//for debugging purposes
 		pros::lcd::set_text(1,"Left speed: " + to_string(vL));
 		pros::lcd::set_text(2,"Right Speed: " + to_string(vR));
-		//moves left motors
-		L1.move(vL);
-		L2.move(vL);
-		L3.move(vL);
-		L4.move(vL);
-
-		//moves right motors
-		R1.move(vR);
-		R2.move(vR);
-		R3.move(vR);
-		R4.move(vR);
-
-		//slows down the code so the brain isn't overwhelmed 
-		//units = ms
-		pros::delay(20);
 	}
 }
 
