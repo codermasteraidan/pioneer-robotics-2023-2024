@@ -2,6 +2,7 @@
 #include <iostream>
 using namespace std; //so I can use strings cuz they're nice for debugging
 int robotNumber = 0; //0 = code bot, 1 = robot 1, 2 = robot 2
+
 /*
 Drive System Stuff
 */
@@ -21,6 +22,8 @@ pros::Motor R1(portR1, MOTOR_GEAR_BLUE, true);
 pros::Motor R2(portR2, MOTOR_GEAR_BLUE, false);
 pros::Motor R3(portR3, MOTOR_GEAR_BLUE, true);
 pros::Motor R4(portR4, MOTOR_GEAR_BLUE, false);
+int lDriveVoltage;
+int rDriveVoltage; //can vary from -127 to 127. The further from 0 the faster the motor turns.
 void moveLeftMotors (int voltage)
 {
 	L1.move(voltage);
@@ -35,6 +38,7 @@ void moveRightMotors (int voltage)
 	R3.move(voltage);
 	R4.move(voltage);
 }
+
 /*
 Intake Stuff
 */
@@ -43,11 +47,6 @@ int portI2;
 int intakeVoltage = 80;
 pros::Motor I1(portI1, MOTOR_GEAR_GREEN, false);
 pros::Motor I2(portI2, MOTOR_GEAR_GREEN, true);
-void moveIntake (int voltage)
-{
-	I1.move(voltage);
-	I2.move(voltage);
-}
 
 /*
 Shooter Stuff
@@ -57,11 +56,6 @@ int portS2;
 int shooterVoltage = 120;
 pros:: Motor S1(portS1, MOTOR_GEAR_BLUE, false);
 pros:: Motor S2(portS2, MOTOR_GEAR_BLUE, true);
-void moveShooter (int voltage)
-{
-	S1.move(voltage);
-	S2.move(voltage);
-}
 
 /*
 Gives all the ports a value, based on what the robotNumber is.
@@ -120,7 +114,6 @@ void initialize() {
 		portS1 = 4; //shooter
 		portS2 = 5;
 	}
-	
 }
 
 //probably won't use this, but don't delete it or pros might get angry.
@@ -133,39 +126,63 @@ void autonomous()
 
 }
 
+//exponentialControl made by ChatGPT, not sure if it works will test later!
+int exponentialControl(int joystickValue)
+{
+	// Check if joystick value is within deadband threshold
+	if (std::abs(joystickValue) < 10) {
+		// Set motor speed to zero when joystick value is close to zero
+		return 0;
+	} 
+	else {
+	// Convert joystick value to a range of -1 to 1
+		double normalizedValue = static_cast<double>(joystickValue) / 127.0;
+
+		// Calculate the exponential increase
+		double v = std::pow(std::abs(normalizedValue), 2.0);
+
+		// Scale the speed value to the motor range (-127 to 127)
+		v = v * 127;
+		int intV = (int) v;
+		// Set the motor speed
+		return intV;
+	}
+}
 //this function runs during driver control period. 
 void opcontrol() {
 	//makes sure you get controller inputs
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	int vL;
-	int vR; //The v stands for voltage, can vary from -127 to 127. The further from 0 the faster the motor turns.
 	while (true) {		
 		//gets input from controller, cuts the value in half and makes the motors move at that speed.  
-		vL = master.get_analog(ANALOG_LEFT_Y);
-		vR = master.get_analog(ANALOG_RIGHT_Y);
-		vL = int(vL/2);
-		vR = int(vR/2);		
-		moveLeftMotors(vL);
-		moveRightMotors(vR); //moves the drive system motors :)
+		lDriveVoltage = master.get_analog(ANALOG_LEFT_Y);
+		rDriveVoltage = master.get_analog(ANALOG_RIGHT_Y);
+
+		//potential exponential control? ChatGPT made it so not sure how good it is
+		//lDriveVoltage = exponentialControl(lDriveVoltage);
+		//rDriveVoltage = exponentialControl(rDriveVoltage);
+		lDriveVoltage = int(lDriveVoltage/2);
+		rDriveVoltage = int(rDriveVoltage/2);		
+		moveLeftMotors(lDriveVoltage);
+		moveRightMotors(rDriveVoltage); //moves the drive system motors :)
 
 		//intake is the L1 button
-		if (master.get_digital(DIGITAL_L1))
-		{
-			moveIntake(intakeVoltage);
+		if (master.get_digital(DIGITAL_L1)){
+			I1.move(intakeVoltage);
+			I2.move(intakeVoltage);
 		}
-		else 
-		{
-			moveIntake(0);
+		else {
+			I1.move(0);
+			I2.move(0);
 		}
 
 		//shooter is the R1 button
-		if (master.get_digital(DIGITAL_R1))
-		{
-			moveShooter(shooterVoltage);
+		if (master.get_digital(DIGITAL_R1)){
+			S1.move(shooterVoltage);
+			S2.move(shooterVoltage);
 		}
-		else
-		{
-			moveShooter(0);
+		else{
+			S1.move(0);
+			S2.move(0);
 		}
 
 		pros::delay(20); //slows down code so brain doesn't kill itself :)
