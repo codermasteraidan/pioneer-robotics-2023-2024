@@ -1,17 +1,24 @@
 #include "main.h"
 #include <iostream>
 using namespace std; //so I can use strings cuz they're nice for debugging
+
+
+
+int robotNumber = 0; //0 = code bot, 1 = robot 1, 2 = robot 2
+
+
+
 /*
 Drive System Stuff
 */
-static int portL1 = 14; //all 8 motor port variables
-static int portL2 = 13; //port variables are unnecessary but make it easier to see what each port is.  
-static int portL3 = 12;
-static int portL4 = 11;
-static int portR1 = 17;
-static int portR2 = 18;
-static int portR3 = 19;
-static int portR4 = 20;
+int portL1;
+int portL2;
+int portL3;
+int portL4;
+int portR1;
+int portR2;
+int portR3;
+int portR4;
 pros::Motor L1(portL1, MOTOR_GEAR_BLUE, false); //all 8 drive motors
 pros::Motor L2(portL2, MOTOR_GEAR_BLUE, true);
 pros::Motor L3(portL3, MOTOR_GEAR_BLUE, false);
@@ -44,6 +51,26 @@ End of Drive System Stuff
 //only is so you can display numbers on brain screen for debugging purposes
 void initialize() {
 	pros::lcd::initialize();	
+	if (robotNumber == 0)
+	{
+		portL1 = 14; //all 8 motor port variables
+		portL2 = 8; //port variables are unnecessary but make it easier to see what each port is.  
+		portL3 = 10;
+		portL4 = 3;
+		portR1 = 17;
+		portR2 = 6;
+		portR3 = 7;
+		portR4 = 18;
+	}
+	if (robotNumber == 1)
+	{
+
+	}
+	if (robotNumber == 2)
+	{
+		
+	}
+	
 }
 
 //probably won't use this, but don't delete it or pros might get angry.
