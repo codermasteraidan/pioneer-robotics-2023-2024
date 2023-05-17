@@ -1,13 +1,7 @@
 #include "main.h"
 #include <iostream>
 using namespace std; //so I can use strings cuz they're nice for debugging
-
-
-
 int robotNumber = 0; //0 = code bot, 1 = robot 1, 2 = robot 2
-
-
-
 /*
 Drive System Stuff
 */
@@ -27,8 +21,6 @@ pros::Motor R1(portR1, MOTOR_GEAR_BLUE, true);
 pros::Motor R2(portR2, MOTOR_GEAR_BLUE, false);
 pros::Motor R3(portR3, MOTOR_GEAR_BLUE, true);
 pros::Motor R4(portR4, MOTOR_GEAR_BLUE, false);
-
-//shortens the code later down, potentially can be used for autonomous code later?
 void moveLeftMotors (int voltage)
 {
 	L1.move(voltage);
@@ -44,15 +36,45 @@ void moveRightMotors (int voltage)
 	R4.move(voltage);
 }
 /*
-End of Drive System Stuff 
+Intake Stuff
 */
+int portI1;
+int portI2;
+int intakeVoltage = 80;
+pros::Motor I1(portI1, MOTOR_GEAR_GREEN, false);
+pros::Motor I2(portI2, MOTOR_GEAR_GREEN, true);
+void moveIntake (int voltage)
+{
+	I1.move(voltage);
+	I2.move(voltage);
+}
 
+/*
+Shooter Stuff
+*/
+int portS1;
+int portS2;
+int shooterVoltage = 120;
+pros:: Motor S1(portS1, MOTOR_GEAR_BLUE, false);
+pros:: Motor S2(portS2, MOTOR_GEAR_BLUE, true);
+void moveShooter (int voltage)
+{
+	S1.move(voltage);
+	S2.move(voltage);
+}
 
-//only is so you can display numbers on brain screen for debugging purposes
+/*
+Gives all the ports a value, based on what the robotNumber is.
+Robot number 0 = test bot
+Robot number 1 = main robot 1
+Robot number 2 = main robot 2
+*/
 void initialize() {
 	pros::lcd::initialize();	
+
 	if (robotNumber == 0)
 	{
+		pros::lcd::set_text(1, "Test Robot");
 		portL1 = 14; //all 8 motor port variables
 		portL2 = 8; //port variables are unnecessary but make it easier to see what each port is.  
 		portL3 = 10;
@@ -61,14 +83,42 @@ void initialize() {
 		portR2 = 6;
 		portR3 = 7;
 		portR4 = 18;
+		portI1 = 1; //intake
+		portI2 = 2;
+		portS1 = 4; //shooter
+		portS2 = 5;
 	}
 	if (robotNumber == 1)
 	{
-
+		pros::lcd::set_text(1, "Robot 1");
+		portL1 = 14; //all 8 motor port variables
+		portL2 = 8; //port variables are unnecessary but make it easier to see what each port is.  
+		portL3 = 10;
+		portL4 = 3;
+		portR1 = 17;
+		portR2 = 6;
+		portR3 = 7;
+		portR4 = 18;
+		portI1 = 1; //intake
+		portI2 = 2;
+		portS1 = 4; //shooter
+		portS2 = 5;
 	}
 	if (robotNumber == 2)
 	{
-		
+		pros::lcd::set_text(1, "Robot 2");
+		portL1 = 14; //all 8 motor port variables
+		portL2 = 8; //port variables are unnecessary but make it easier to see what each port is.  
+		portL3 = 10;
+		portL4 = 3;
+		portR1 = 17;
+		portR2 = 6;
+		portR3 = 7;
+		portR4 = 18;
+		portI1 = 1; //intake
+		portI2 = 2;
+		portS1 = 4; //shooter
+		portS2 = 5;
 	}
 	
 }
@@ -98,11 +148,27 @@ void opcontrol() {
 		moveLeftMotors(vL);
 		moveRightMotors(vR); //moves the drive system motors :)
 
-		pros::delay(20); //slows down code so brain doesn't kill itself :)
+		//intake is the L1 button
+		if (master.get_digital(DIGITAL_L1))
+		{
+			moveIntake(intakeVoltage);
+		}
+		else 
+		{
+			moveIntake(0);
+		}
 
-		//for debugging purposes
-		pros::lcd::set_text(1,"Left speed: " + to_string(vL));
-		pros::lcd::set_text(2,"Right Speed: " + to_string(vR));
+		//shooter is the R1 button
+		if (master.get_digital(DIGITAL_R1))
+		{
+			moveShooter(shooterVoltage);
+		}
+		else
+		{
+			moveShooter(0);
+		}
+
+		pros::delay(20); //slows down code so brain doesn't kill itself :)
 	}
 }
 
